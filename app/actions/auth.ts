@@ -1,12 +1,15 @@
 'use server';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { prisma } from '@/lib/prisma';
 
 export async function login(prevState: any, formData: FormData) {
-  const email = formData.get('email') as string;
-  const password = formData.get('password') as string;
+  const email = String(formData.get('email') ?? '');
+  const password = String(formData.get('password') ?? '');
 
-  if (email !== 'admin@taskflow.com' || password !== 'password123') {
+  const user = await prisma.user.findUnique({ where: { email } });
+
+  if (!user || user.password !== password) {
     return { error: 'Email ou mot de passe incorrect' };
   }
 
@@ -14,9 +17,9 @@ export async function login(prevState: any, formData: FormData) {
   cookieStore.set(
     'session',
     JSON.stringify({
-      email,
-      name: 'Admin',
-      role: 'admin',
+      email: user.email,
+      name: user.name,
+      role: user.email === 'admin@taskflow.com' ? 'admin' : 'user',
     }),
     {
       httpOnly: true,

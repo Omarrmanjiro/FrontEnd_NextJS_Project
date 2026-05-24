@@ -2,12 +2,14 @@ import AddProjectForm from './AddProjectForm';
 import { deleteProject } from '../actions/projects';
 
 export default async function DashboardPage() {
-  const res = await fetch('http://localhost:4000/projects', { cache: 'no-store' });
-  const projects = await res.json();
+  const projects = await prisma.project.findMany({
+    orderBy: { createdAt: 'desc' },
+  });
 
   return (
     <div style={{ padding: '2rem' }}>
       <h1>Dashboard</h1>
+      <p>{projects.length} projets</p>
       <AddProjectForm />
       <ul>
         {projects.map((p: any) => (

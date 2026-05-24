@@ -1,28 +1,41 @@
-// app/projects/[id]/page.tsx
-interface Project { id: string; name: string; color: string; }
-interface Props {
- params: Promise<{ id: string }>;
+import { prisma } from '@/lib/prisma';
+import { notFound } from 'next/navigation';
+
+type Props = {
+  params: { id: string };
+};
+
+export async function generateStaticParams() {
+  const projects = await prisma.project.findMany();
+  return projects.map((project) => ({ id: String(project.id) }));
 }
+
 export default async function ProjectPage({ params }: Props) {
- const { id } = await params;
- const res = await fetch(`http://localhost:4000/projects/${id}`, {
- cache: 'no-store'
- });
- if (!res.ok) {
- return <div style={{ padding: '2rem' }}>Projet non trouvé</div>;
- }
- const project: Project = await res.json();
- return (
- <div style={{ padding: '2rem' }}>
- <h1>
- <span style={{
- display: 'inline-block', width: 16, height: 16,
- borderRadius: '50%', background: project.color, marginRight: 8
- }} />
- {project.name}
- </h1>
- <p>ID : {project.id}</p>
- <a href="/dashboard">← Retour au Dashboard</a>
- </div>
- );
+  const project = await prisma.project.findUnique({
+    where: { id: Number(params.id) },
+  });
+
+  if (!project) {
+    notFound();
+  }
+
+  return (
+    <div style={{ padding: '2rem' }}>
+      <h1>
+        <span
+          style={{
+            display: 'inline-block',
+            width: 16,
+            height: 16,
+            borderRadius: '50%',
+            background: project.color,
+            marginRight: 8,
+          }}
+        />
+        {project.name}
+      </h1>
+      <p>Créé le : {project.createdAt.toLocaleDateString('fr-FR')}</p>
+      <a href="/dashboard">← Retour au Dashboard</a>
+    </div>
+  );
 }
